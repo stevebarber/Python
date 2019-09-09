@@ -26,6 +26,7 @@ i_malware = 0
 i_benign = 0
 i_hash_error = 0
 
+
 class Logger(object):
     def __init__(self):
         self.terminal = sys.stdout
@@ -127,5 +128,3 @@ if __name__ == '__main__':
         print(__doc__)
     else:
         main()
-
-
