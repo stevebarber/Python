@@ -1,0 +1,1 @@
+This is a template framework used to build PAN scripts.
