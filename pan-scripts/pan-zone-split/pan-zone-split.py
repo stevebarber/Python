@@ -13,11 +13,12 @@ Break out firewall rules where there are multiple zones for both source and dest
 """
 
 import sys
+import os
 import getpass
 import argparse
 import datetime
 
-from pandevice import panorama, firewall, policies
+from pandevice import panorama, policies
 from copy import deepcopy
 from variables import *
 
@@ -51,6 +52,7 @@ except KeyboardInterrupt:
     except SystemExit:
         os._exit()
 
+
 class Logger(object):
     def __init__(self):
         self.terminal = sys.stdout
@@ -61,10 +63,11 @@ class Logger(object):
         self.log.write(message)
 
     def flush(self):
-        #this flush method is needed for python 3 compatibility.
-        #this handles the flush command by doing nothing.
-        #you might want to specify some extra behavior here.
+        # this flush method is needed for python 3 compatibility.
+        # this handles the flush command by doing nothing.
+        # you might want to specify some extra behavior here.
         pass
+
 
 sys.stdout = Logger()
 
@@ -116,6 +119,7 @@ def main():
 
     print('')
     print('Total source rules cloned: ' + str(i))
+
 
 if __name__ == '__main__':
 
