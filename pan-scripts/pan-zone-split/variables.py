@@ -1,7 +1,7 @@
 # Log filename
 LOG_FILE = 'logfile'
 # Device group to run script against
-DEVICE_GROUP = 'Screening.AL'
+DEVICE_GROUP = '<device group name>'
 # Tag cloned and original rule with the following tag
 RULE_TAG = 'ZONE_SPLIT'
 # Cloned rules will maintain original rule name with the following suffix.
