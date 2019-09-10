@@ -11,22 +11,27 @@ Break out firewall rules where there are multiple zones for both source and dest
 -p, --password, help="Login password"
 
 """
+try:
+    import sys
+    import os
+    import signal
+    import getpass
+    import argparse
+    import datetime
 
-import sys
-import os
-import getpass
-import argparse
-import datetime
-
-from pandevice import panorama, policies
-from copy import deepcopy
-from variables import *
+    from pandevice import panorama, policies
+    from copy import deepcopy
+    from variables import *
+except ImportError:
+    raise ImportError('Verify the proper python modules are installed')
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--ip", help="Name or IP address of the firewall/Panorama")
 parser.add_argument("-u", "--username", help="User login")
 parser.add_argument("-p", "--password", help="Login password")
 args = parser.parse_args()
+
+i = 0
 
 print('\n')
 
@@ -72,53 +77,71 @@ class Logger(object):
 sys.stdout = Logger()
 
 
+def keyboardInterruptHandler(signal, frame):
+    print('KeyboardInterrupt (ID: {}) has been caught. Exiting script'.format(signal))
+    exit(0)
+
+
+def rule_clone(rule, pano, postrulebase):
+
+    global i
+
+    print('Rule name: {0} - From zone: {1} - To zone: {2}'.format(rule.name, rule.fromzone, rule.tozone))
+    i += 1
+    n = 0
+    for srczone in rule.fromzone:
+        for dstzone in rule.tozone:
+            if dstzone != srczone:
+                n += 1
+                print('   ---   from: ' + srczone + ' to: ' + dstzone + ' rule#: ' + str(n))
+                rule_copy = postrulebase.add(deepcopy(rule))
+                rule_copy.name = rule.name + RULE_SUFFIX + str(n)
+                rule_copy.fromzone = None
+                rule_copy.tozone = None
+                rule_copy.fromzone = srczone
+                rule_copy.tozone = dstzone
+                if rule_copy.tag == None:
+                    rule_copy.tag = RULE_TAG
+                elif not RULE_TAG in rule_copy.tag:
+                    rule_copy.tag.append(RULE_TAG)
+                rule_copy.create()
+                pano.xapi.move(rule_copy.xpath(), 'before', rule.name)
+    if rule.tag == None:
+        rule.tag = RULE_TAG
+    elif not RULE_TAG in rule.tag:
+        rule.tag.append(RULE_TAG)
+    rule.apply()
+
+
 def main():
 
-    pano = panorama.Panorama(ip, user, pw)
+    signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
-    dg = panorama.DeviceGroup(DEVICE_GROUP)
-    pano.add(dg)
+    try:
+        pano = panorama.Panorama(ip, user, pw)
 
-    postrulebase = policies.PostRulebase()
-    dg.add(postrulebase)
+        dg = panorama.DeviceGroup(DEVICE_GROUP)
+        pano.add(dg)
 
-    rule_refresh = policies.SecurityRule.refreshall(postrulebase)
+        postrulebase = policies.PostRulebase()
+        dg.add(postrulebase)
 
-    rule_list = postrulebase.children
+        rule_refresh = policies.SecurityRule.refreshall(postrulebase)
 
-    i = 0
+        rule_list = postrulebase.children
 
-    for rule in rule_list:
-        if len(rule.fromzone) > 1 and len(rule.tozone) > 1:
-            if rule.tag == None or not RULE_TAG in rule.tag:
-                print('Rule name: {0} - From zone: {1} - To zone: {2}'.format(rule.name, rule.fromzone, rule.tozone))
-                n = 0
-                i = i + 1
-                for srczone in rule.fromzone:
-                    for dstzone in rule.tozone:
-                        if dstzone != srczone:
-                            n = n + 1
-                            print('   ---   from: ' + srczone + ' to: ' + dstzone + ' rule#: ' + str(n))
-                            rule_copy = postrulebase.add(deepcopy(rule))
-                            rule_copy.name = rule.name + RULE_SUFFIX + str(n)
-                            rule_copy.fromzone = None
-                            rule_copy.tozone = None
-                            rule_copy.fromzone = srczone
-                            rule_copy.tozone = dstzone
-                            if rule_copy.tag == None:
-                                rule_copy.tag = RULE_TAG
-                            elif not RULE_TAG in rule_copy.tag:
-                                rule_copy.tag.append(RULE_TAG)
-                            rule_copy.create()
-                            pano.xapi.move(rule_copy.xpath(), 'before', rule.name)
-                if rule.tag == None:
-                    rule.tag = RULE_TAG
-                elif not RULE_TAG in rule.tag:
-                    rule.tag.append(RULE_TAG)
-                rule.apply()
+        for rule in rule_list:
+            if SPLIT_DISABLED or (not SPLIT_DISABLED and not rule.disabled):
+                if len(rule.fromzone) > 1 and len(rule.tozone) > 1:
+                    if rule.tag == None or not RULE_TAG in rule.tag:
+                        rule_clone(rule, pano, postrulebase)
 
-    print('')
-    print('Total source rules cloned: ' + str(i))
+        print('')
+        print('Total source rules cloned: ' + str(i))
+
+    except Exception as e:
+        print('Error.  Verify credentials/device address/device group name and try again.')
+        exit(0)
 
 
 if __name__ == '__main__':
