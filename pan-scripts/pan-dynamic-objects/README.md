@@ -1,1 +1,1 @@
-This is a template framework used to build PAN scripts.
+Find tagged objects that are not members of dynamic address group
