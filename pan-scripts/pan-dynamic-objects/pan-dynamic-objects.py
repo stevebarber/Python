@@ -110,30 +110,19 @@ def main():
         test = etree.fromstring(dyngroups)
         for element in test.findall("result/device-groups/entry"):
             for z in element:
-                #print('')
-                #print('Group Name: ' + z.attrib['name'])
-                #for filter in z.findall('filter'):
-                    #print('Filter: ' + filter.text)
                 for y in z.findall('member-list'):
                     for x in y:
                         taggedobj.append(x.attrib['name'])
-                        #print('Member: ' + x.attrib['name'])
-
-        for addrobject in device.children:
-            if addrobject.tag:
-                for tag in addrobject.tag:
-                    tagset.add(tag)
 
         for addrobject in device.children:
             if addrobject.tag:
                 if not addrobject.name in taggedobj:
                     print(addrobject.name)
+                for tag in addrobject.tag:
+                    tagset.add(tag)
 
     else:
         print('do FW stuff here')
-
-    #print(taggedobj)
-    #print(tagset)
 
 
 if __name__ == '__main__':
