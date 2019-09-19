@@ -19,7 +19,7 @@ import argparse
 import csv
 from lxml import etree
 
-from pandevice import base, device, panorama, network, objects, firewall, policies
+from pandevice import base, panorama, objects
 from netaddr import *
 from variables import *
 
@@ -100,6 +100,7 @@ def get_api_output(device, mode):
 
         output = device.op("<show><object><dynamic-address-group><all></all></dynamic-address-group></object></show>", "vsys1", True, False)
         return etree.fromstring((output))
+
 
 def get_devicegroups(dg_output):
 
