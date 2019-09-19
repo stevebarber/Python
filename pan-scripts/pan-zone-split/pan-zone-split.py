@@ -140,6 +140,7 @@ def main():
         print('Total source rules cloned: ' + str(i))
 
     except Exception as e:
+        print(e)
         print('Error.  Verify credentials/device address/device group name and try again.')
         exit(0)
 

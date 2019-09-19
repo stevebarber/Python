@@ -13,6 +13,7 @@ Template script to interact with firewalls and Panorama
 """
 
 import sys
+import signal
 import getpass
 import argparse
 
@@ -67,6 +68,11 @@ class logger(object):
 sys.stdout = logger()
 
 
+def keyboardInterruptHandler(signal, frame):
+    print('KeyboardInterrupt (ID: {}) has been caught. Exiting script'.format(signal))
+    exit(0)
+
+
 def create_connection():
 
     mode = None
@@ -86,6 +92,8 @@ def create_connection():
 
 
 def main():
+
+    signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     device, mode = create_connection()
     print("Connected to " + mode)

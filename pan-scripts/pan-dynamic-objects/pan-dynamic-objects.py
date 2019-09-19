@@ -20,7 +20,7 @@ import csv
 from lxml import etree
 
 from pandevice import base, panorama, objects
-from netaddr import *
+#from netaddr import *
 from variables import *
 
 parser = argparse.ArgumentParser()
@@ -51,7 +51,7 @@ except KeyboardInterrupt:
     raise SystemExit
 
 
-class logger(object):
+class Logger(object):
     def __init__(self):
         self.terminal = sys.stdout
         self.log = open(LOG_FILE, "a")
@@ -67,10 +67,10 @@ class logger(object):
         pass
 
 
-sys.stdout = logger()
+sys.stdout = Logger()
 
 
-def keyboardInterruptHandler(signal, frame):
+def keyboardinterrupthandler(signal):
     print('KeyboardInterrupt (ID: {}) has been caught. Exiting script'.format(signal))
     exit(0)
 
@@ -83,12 +83,12 @@ def create_connection():
         if str(type(device)) == "<class 'pandevice.panorama.Panorama'>":
             mode = 'Panorama'
         if str(type(device)) == "<class 'pandevice.firewall.Firewall'>":
-            mode =  "Firewall"
+            mode = 'Firewall'
         print("Connected to " + mode)
         return device, mode
-    except:
+    except Exception:
         print('\n')
-        print("There was a problem establishing a connection to the device.\n" \
+        print("There was a problem establishing a connection to the device.\n"
               "Check IP address/hostname/credentials and try again")
         print('\n')
         raise SystemExit
@@ -98,8 +98,9 @@ def get_api_output(device, mode):
 
     if mode == 'Panorama':
 
-        output = device.op("<show><object><dynamic-address-group><all></all></dynamic-address-group></object></show>", "vsys1", True, False)
-        return etree.fromstring((output))
+        output = device.op("<show><object><dynamic-address-group><all></all></dynamic-address-group></object></show>",
+                           "vsys1", True, False)
+        return etree.fromstring(output)
 
 
 def get_devicegroups(dg_output):
@@ -139,17 +140,17 @@ def get_address_objects(device, dg_list, group_members):
 
             for addrobject in pano.children:
                 if addrobject.tag:
-                    if not addrobject.name in group_members:
+                    if addrobject.name not in group_members:
                         i += 1
                         output_writer.writerow([str(dg), str(addrobject), str(addrobject.tag)])
                         print('tagged - ' + str(dg) + ' - ' + str(addrobject) + ' - ' + str(addrobject.tag))
-    print('')
+    print('\n')
     print('Total tagged addresses: ' + str(i))
 
 
 def main():
 
-    signal.signal(signal.SIGINT, keyboardInterruptHandler)
+    signal.signal(signal.SIGINT, keyboardinterrupthandler)
     device, mode = create_connection()
     dg_output = get_api_output(device, mode)
     dg_list = get_devicegroups(dg_output)
