@@ -20,7 +20,6 @@ import csv
 from lxml import etree
 
 from pandevice import base, panorama, objects
-#from netaddr import *
 from variables import *
 
 parser = argparse.ArgumentParser()
