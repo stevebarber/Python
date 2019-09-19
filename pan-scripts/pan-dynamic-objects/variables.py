@@ -1,5 +1,5 @@
 # Log filename
-LOG_FILE = 'logfile'
+LOG_FILE = 'logfile.txt'
 # Device group to run script against
 #DEVICE_GROUP = 'DMZ_Inbound.AL'
 DEVICE_GROUP = '<device_group_name>'
