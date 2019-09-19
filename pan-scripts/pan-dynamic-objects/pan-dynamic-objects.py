@@ -16,6 +16,7 @@ import sys
 import signal
 import getpass
 import argparse
+import csv
 from lxml import etree
 
 from pandevice import base, device, panorama, network, objects, firewall, policies
@@ -83,6 +84,7 @@ def create_connection():
             mode = 'Panorama'
         if str(type(device)) == "<class 'pandevice.firewall.Firewall'>":
             mode =  "Firewall"
+        print("Connected to " + mode)
         return device, mode
     except:
         print('\n')
@@ -92,37 +94,71 @@ def create_connection():
         raise SystemExit
 
 
-def main():
+def get_api_output(device, mode):
+
+    if mode == 'Panorama':
+
+        output = device.op("<show><object><dynamic-address-group><all></all></dynamic-address-group></object></show>", "vsys1", True, False)
+        return etree.fromstring((output))
+
+def get_devicegroups(dg_output):
+
+    dg_list = []
+
+    for entry in dg_output.findall("result/device-groups/entry"):
+        dg_list.append(entry.attrib['name'])
+
+    return dg_list
+
+
+def get_dyn_groups_members(dg_output):
 
     taggedobj = []
-    tagset = set([])
+    for entry in dg_output.findall("result/device-groups/entry"):
+        for addrgrp in entry:
+            for y in addrgrp.findall('member-list'):
+                for x in y:
+                    taggedobj.append(x.attrib['name'])
+        return taggedobj
+
+def get_dyn_members():
+
+    taggedobj = []
+    for addrgrp in entry:
+        for y in addrgrp.findall('member-list'):
+            for x in y:
+                taggedobj.append(x.attrib['name'])
+    return taggedobj
+
+
+def get_address_objects(device, dg_list, group_members):
+
+    i = 0
+
+    with open('log.csv', 'w', newline='') as output_file:
+        output_writer = csv.writer(output_file, delimiter=',')
+        for dg in dg_list:
+            pano = device.add(panorama.DeviceGroup(dg))
+            objects.AddressObject.refreshall(pano, add=True)
+
+            for addrobject in pano.children:
+                if addrobject.tag:
+                    if not addrobject.name in group_members:
+                        i += 1
+                        output_writer.writerow([str(dg), str(addrobject), str(addrobject.tag)])
+                        print('tagged - ' + str(dg) + ' - ' + str(addrobject) + ' - ' + str(addrobject.tag))
+    print('')
+    print('Total tagged addresses: ' + str(i))
+
+
+def main():
 
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
     device, mode = create_connection()
-    print("Connected to " + mode)
-
-    if mode == 'Panorama':
-        dg = panorama.DeviceGroup(DEVICE_GROUP)
-        device.add(dg)
-        objects.AddressObject.refreshall(device, add=True)
-
-        dyngroups = device.op("<show><object><dynamic-address-group><all></all></dynamic-address-group></object></show>", "vsys1", True, False)
-        test = etree.fromstring(dyngroups)
-        for element in test.findall("result/device-groups/entry"):
-            for z in element:
-                for y in z.findall('member-list'):
-                    for x in y:
-                        taggedobj.append(x.attrib['name'])
-
-        for addrobject in device.children:
-            if addrobject.tag:
-                if not addrobject.name in taggedobj:
-                    print(addrobject.name)
-                for tag in addrobject.tag:
-                    tagset.add(tag)
-
-    else:
-        print('do FW stuff here')
+    dg_output = get_api_output(device, mode)
+    dg_list = get_devicegroups(dg_output)
+    groups_members = get_dyn_groups_members(dg_output)
+    get_address_objects(device, dg_list, groups_members)
 
 
 if __name__ == '__main__':
