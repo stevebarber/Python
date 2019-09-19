@@ -114,28 +114,37 @@ def get_devicegroups(dg_output):
 def get_dyn_groups_members(dg_output):
 
     taggedobj = []
-    for entry in dg_output.findall("result/device-groups/entry"):
-        for addrgrp in entry:
-            for y in addrgrp.findall('member-list'):
-                for x in y:
-                    taggedobj.append(x.attrib['name'])
+    dg_name = ''
+    with open('tagged_addresses_dynamic.csv', 'w', newline='') as output_file:
+        output_writer = csv.writer(output_file, delimiter=',')
+        for entry in dg_output.findall("result/device-groups/entry"):
+            for addrgrp in entry:
+                print(addrgrp.attrib['name'])
+                dg_name = addrgrp.attrib['name']
+                for y in addrgrp.findall('member-list'):
+                    for x in y:
+                        output_writer.writerow([dg_name, x.attrib['name']])
+                        taggedobj.append(x.attrib['name'])
         return taggedobj
 
 def get_dyn_members():
 
     taggedobj = []
-    for addrgrp in entry:
-        for y in addrgrp.findall('member-list'):
-            for x in y:
-                taggedobj.append(x.attrib['name'])
-    return taggedobj
+    with open('tagged_addresses_dynamic.csv', 'w', newline='') as output_file:
+        output_writer = csv.writer(output_file, delimiter=',')
+        for addrgrp in entry:
+            for y in addrgrp.findall('member-list'):
+                for x in y:
+                    output_writer.writerow([str(dg), str(addrobject), str(addrobject.tag)])
+                    taggedobj.append(x.attrib['name'])
+        return taggedobj
 
 
 def get_address_objects(device, dg_list, group_members):
 
     i = 0
 
-    with open('log.csv', 'w', newline='') as output_file:
+    with open('tagged_addresses_not_dynamic.csv', 'w', newline='') as output_file:
         output_writer = csv.writer(output_file, delimiter=',')
         for dg in dg_list:
             pano = device.add(panorama.DeviceGroup(dg))
@@ -146,7 +155,7 @@ def get_address_objects(device, dg_list, group_members):
                     if not addrobject.name in group_members:
                         i += 1
                         output_writer.writerow([str(dg), str(addrobject), str(addrobject.tag)])
-                        print('tagged - ' + str(dg) + ' - ' + str(addrobject) + ' - ' + str(addrobject.tag))
+                        #print('tagged - ' + str(dg) + ' - ' + str(addrobject) + ' - ' + str(addrobject.tag))
     print('')
     print('Total tagged addresses: ' + str(i))
 
