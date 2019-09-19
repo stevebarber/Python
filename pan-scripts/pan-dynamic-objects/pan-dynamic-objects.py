@@ -111,7 +111,7 @@ def get_devicegroups(dg_output):
     return dg_list
 
 
-def get_dyn_groups_members(dg_output):
+def get_dyn_group_members(dg_output):
 
     taggedobj = []
     with open('tagged_addresses_dynamic.csv', 'w', newline='') as output_file:
@@ -152,7 +152,7 @@ def main():
     device, mode = create_connection()
     dg_output = get_api_output(device, mode)
     dg_list = get_devicegroups(dg_output)
-    groups_members = get_dyn_groups_members(dg_output)
+    groups_members = get_dyn_group_members(dg_output)
     get_address_objects(device, dg_list, groups_members)
 
 
